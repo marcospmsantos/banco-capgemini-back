@@ -5,6 +5,7 @@ namespace App\Services\Query;
 use App\Repositories\ContaRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\ContaClienteRepository;
+use Exception;
 
 class ContaQuery
 {
@@ -45,7 +46,14 @@ class ContaQuery
     {
         $user = $this->userRepository->fetchOnlyUser($user_id);
         $cc = $this->contaClienteRepository->buscaContaCliente($user->cliente->id);
-        return $this->contaRepository->buscaSaldo($cc->conta_id);
+        $res = $this->contaRepository->buscaTipoConta($cc->conta_id);
+        
+        /* Verifica se a conta é corrente */
+        if ($res->tipo_conta_id == 1) {
+            return $this->contaRepository->buscaSaldo($cc->conta_id);
+        } else {
+            throw new Exception('Não é permitida consulta de saldo em conta poupança');
+        }
     }
 
 }

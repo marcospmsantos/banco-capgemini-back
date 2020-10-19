@@ -23,6 +23,21 @@ class ContaRepository extends AbstractRepository
     }
 
     /**
+     * Buscar tipo da conta do cliente
+     *
+     * @param $id
+     * @return mixed
+     */
+    public function buscaTipoConta($id)
+    {
+        $query = $this->model
+            ->select('tipo_conta_id')
+            ->where('id', $id)
+            ->first();
+        return $query;
+    }
+
+    /**
      * Buscar saldo da conta do cliente
      *
      * @param $id

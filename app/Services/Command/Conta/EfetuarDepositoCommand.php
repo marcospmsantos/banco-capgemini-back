@@ -12,6 +12,7 @@ use App\Models\ContaCliente;
 use App\Repositories\ContaRepository;
 use App\Models\Conta;
 use Illuminate\Support\Facades\DB;
+use Exception;
 
 class EfetuarDepositoCommand extends AbstractCommand
 {
@@ -65,24 +66,30 @@ class EfetuarDepositoCommand extends AbstractCommand
     {
         $user = $this->userRepository->fetchOnlyUser($this->data['user_id']);
         $cc = $this->contaClienteRepository->buscaContaCliente($user->cliente->id);
+        $conta = $this->contaRepository->findOrFail($cc->conta_id);
         $valor = $this->data['valor'];
 
-        DB::beginTransaction();
+        /* Verifica se a conta é corrente */
+        if ($conta->tipo_conta_id == 1) {
+            DB::beginTransaction();
        
-        $transacao = [
-            'valor' => floatval($valor),
-            'tipo_transacao_id' => 1,
-            'situacao_transacao_id' => 1,
-            'conta_destino_id' => $cc->conta_id
-        ];
-        $entity = $this->transacaoRepository->create($transacao);
+            $transacao = [
+                'valor' => floatval($valor),
+                'tipo_transacao_id' => 1,
+                'situacao_transacao_id' => 1,
+                'conta_destino_id' => $cc->conta_id
+            ];
+            $entity = $this->transacaoRepository->create($transacao);
 
-        $conta = $this->contaRepository->findOrFail($cc->conta_id);
-        $conta->saldo = ($conta->saldo + $valor);
-        $conta->save();
+            
+            $conta->saldo = ($conta->saldo + $valor);
+            $conta->save();
 
-        DB::commit();
+            DB::commit();
 
-        return $entity;
+            return $entity;
+        } else {
+            throw new Exception('Não é permitido depósitos em conta poupança');
+        }
     }
 }

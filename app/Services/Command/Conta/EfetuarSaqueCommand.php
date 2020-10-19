@@ -68,23 +68,27 @@ class EfetuarSaqueCommand extends AbstractCommand
         $conta = $this->contaRepository->findOrFail($cc->conta_id);
         $valor = $this->data['valor'];
        
-        /* Verifica se a conta tem saldo disponivel */
-        if (floatval($conta->saldo) >= floatval($valor)) {
-            /* Verifica se a conta tem limite de saque */
-            if (!is_null($conta->limite_saque) && floatval($conta->limite_saque) < floatval($valor)) {
-                throw new Exception('Limite para saque excedido.');
+        /* Verifica se a conta é corrente */
+        if ($conta->tipo_conta_id == 1) {
+            /* Verifica se a conta tem saldo disponivel */
+            if (floatval($conta->saldo) >= floatval($valor)) {
+                /* Verifica se a conta tem limite de saque */
+                if (!is_null($conta->limite_saque) && floatval($conta->limite_saque) < floatval($valor)) {
+                    throw new Exception('Limite para saque excedido.');
+                } else {
+                    $transacao = [
+                        'valor' => floatval($valor),
+                        'tipo_transacao_id' => 2,
+                        'situacao_transacao_id' => 3,
+                        'conta_origem_id' => $cc->conta_id
+                    ];
+                    return $this->transacaoRepository->create($transacao);
+                }
             } else {
-                $transacao = [
-                    'valor' => floatval($valor),
-                    'tipo_transacao_id' => 2,
-                    'situacao_transacao_id' => 3,
-                    'conta_origem_id' => $cc->conta_id
-                ];
-                return $this->transacaoRepository->create($transacao);
+                throw new Exception('Saldo insuficiente');
             }
         } else {
-            throw new Exception('Saldo insuficiente');
+            throw new Exception('Não é permitido saque de conta poupança');
         }
-        
     }
 }
